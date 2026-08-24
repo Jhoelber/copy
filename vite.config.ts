@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { handleGenerateCopy } from './server/generateCopy'
+import generateCopyHandler from './api/generate-copy'
 
 function localApiPlugin(): Plugin {
   return {
@@ -42,9 +42,17 @@ function localApiPlugin(): Plugin {
             return
           }
           try {
-            const result = await handleGenerateCopy(JSON.parse(rawBody || '{}'))
-            res.statusCode = result.status
-            res.end(JSON.stringify(result.body))
+            const apiResponse = await generateCopyHandler(
+              new Request('http://localhost/api/generate-copy', {
+                method: 'POST',
+                headers: { 'Content-Type': String(req.headers['content-type'] ?? '') },
+                body: rawBody,
+              }),
+            )
+            if (!(apiResponse instanceof Response)) throw new Error('INVALID_LOCAL_API_RESPONSE')
+            res.statusCode = apiResponse.status
+            apiResponse.headers.forEach((value, name) => res.setHeader(name, value))
+            res.end(await apiResponse.text())
           } catch {
             res.statusCode = 400
             res.end(JSON.stringify({ error: 'Requisição inválida.' }))
