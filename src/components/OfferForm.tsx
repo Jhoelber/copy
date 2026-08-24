@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import { COPY_TYPES, VARIATION_OPTIONS } from '../../shared/copySchemas'
 import type { CopyRequest, FieldErrors } from '../types/copy'
+import { getCopyTypeEstimate } from '../utils/narration'
 import { GenerateButton } from './GenerateButton'
 import { IntensitySlider } from './IntensitySlider'
 import { NarrationEstimate } from './NarrationEstimate'
@@ -177,7 +178,9 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
               className={inputClass}
             >
               {COPY_TYPES.map((type) => (
-                <option key={type}>{type}</option>
+                <option key={type} value={type}>
+                  {type} — {getCopyTypeEstimate(type)}
+                </option>
               ))}
             </select>
             <NarrationEstimate copyType={form.copyType} />
