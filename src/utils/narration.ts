@@ -33,7 +33,7 @@ export function estimateNarrationTime(
 
   if (minutes === 0) return `${seconds}s`
   if (seconds === 0) return `${minutes}min`
-  return `~${minutes}min${String(seconds).padStart(2, '0')}s`
+  return `${minutes}min${String(seconds).padStart(2, '0')}s`
 }
 
 export function formatCharacterCount(characterCount: number) {
@@ -43,11 +43,11 @@ export function formatCharacterCount(characterCount: number) {
 export function getCopyTypeEstimate(copyType: CopyType) {
   const config = COPY_TYPE_CONFIG[copyType]
   if (config.targetCharacters) {
-    return `~${formatCharacterCount(config.targetCharacters)} caracteres • ${estimateNarrationTime(config.targetCharacters)} de narração`
+    return `${formatCharacterCount(config.targetCharacters)} caracteres e ${estimateNarrationTime(config.targetCharacters)} de narração`
   }
 
   if ('minimumCharacters' in config && config.minimumCharacters) {
-    return `${formatCharacterCount(config.minimumCharacters)}+ caracteres • ${estimateNarrationTime(config.minimumCharacters)}+ de narração`
+    return `${formatCharacterCount(config.minimumCharacters)} caracteres e ${estimateNarrationTime(config.minimumCharacters)} de narração`
   }
 
   return 'Tamanho e duração variáveis'
