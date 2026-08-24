@@ -1,4 +1,5 @@
 import type { HistoryEntry } from '../types/copy'
+import { COPY_TYPES, type CopyType } from '../../shared/copyTypeConfig'
 
 const STORAGE_KEY = 'copyforge.history.v1'
 const MAX_HISTORY_ITEMS = 10
@@ -38,6 +39,7 @@ function isHistoryEntry(value: unknown): value is HistoryEntry {
       typeof entry.createdAt === 'string' &&
       entry.request &&
       typeof entry.request.productName === 'string' &&
+      COPY_TYPES.includes(entry.request.copyType as CopyType) &&
       entry.response &&
       Array.isArray(entry.response.copies),
   )

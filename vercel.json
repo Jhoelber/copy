@@ -3,7 +3,7 @@
   "framework": "vite",
   "functions": {
     "api/generate-copy.ts": {
-      "maxDuration": 60
+      "maxDuration": 300
     }
   }
 }

@@ -3,13 +3,14 @@ import { COPY_TYPES, VARIATION_OPTIONS } from '../../shared/copySchemas'
 import type { CopyRequest, FieldErrors } from '../types/copy'
 import { GenerateButton } from './GenerateButton'
 import { IntensitySlider } from './IntensitySlider'
+import { NarrationEstimate } from './NarrationEstimate'
 
 const initialForm: CopyRequest = {
   productName: '',
   offer: '',
   audience: '',
   differentiators: '',
-  copyType: 'Anúncio',
+  copyType: 'Meta Ads',
   variations: 5,
   intensity: 55,
 }
@@ -23,7 +24,6 @@ interface OfferFormProps {
 function validateForm(form: CopyRequest): FieldErrors {
   const errors: FieldErrors = {}
   if (form.productName.trim().length < 2) errors.productName = 'Informe o nome do produto.'
-  if (!form.offer.trim()) errors.offer = 'Informe o preço ou a condição da oferta.'
   if (form.audience.trim().length < 10) {
     errors.audience = 'Descreva o público-alvo com pelo menos 10 caracteres.'
   }
@@ -36,7 +36,7 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
 
   function updateField<K extends keyof CopyRequest>(field: K, value: CopyRequest[K]) {
     setForm((current) => ({ ...current, [field]: value }))
-    if (field === 'productName' || field === 'offer' || field === 'audience') {
+    if (field === 'productName' || field === 'audience') {
       setErrors((current) => ({ ...current, [field]: undefined }))
     }
   }
@@ -105,7 +105,7 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
 
           <div>
             <label htmlFor="offer" className="text-sm font-medium text-slate-200">
-              Preço da oferta <span className="text-cyan-300">*</span>
+              Preço da oferta <span className="font-normal text-slate-500">(opcional)</span>
             </label>
             <input
               id="offer"
@@ -113,16 +113,9 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
               onChange={(event) => updateField('offer', event.target.value)}
               maxLength={300}
               disabled={isLoading}
-              aria-invalid={Boolean(errors.offer)}
-              aria-describedby={errors.offer ? 'offer-error' : undefined}
               placeholder="Ex: R$ 97 ou 12x de R$ 9,74"
-              className={`${inputClass} ${errors.offer ? 'border-red-400/70' : ''}`}
+              className={inputClass}
             />
-            {errors.offer && (
-              <p id="offer-error" className={errorClass}>
-                {errors.offer}
-              </p>
-            )}
           </div>
         </div>
 
@@ -187,6 +180,7 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
                 <option key={type}>{type}</option>
               ))}
             </select>
+            <NarrationEstimate copyType={form.copyType} />
           </div>
           <div>
             <label htmlFor="variations" className="text-sm font-medium text-slate-200">

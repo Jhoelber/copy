@@ -1,6 +1,11 @@
 import { Check, Copy } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import type { GeneratedCopy } from '../types/copy'
+import {
+  countNarrationCharacters,
+  estimateNarrationTime,
+  formatCharacterCount,
+} from '../utils/narration'
 
 interface CopyCardProps {
   copy: GeneratedCopy
@@ -9,6 +14,7 @@ interface CopyCardProps {
 
 export function CopyCard({ copy, index }: CopyCardProps) {
   const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle')
+  const characterCount = countNarrationCharacters(copy)
 
   useEffect(() => {
     if (copyStatus === 'idle') return
@@ -64,6 +70,10 @@ export function CopyCard({ copy, index }: CopyCardProps) {
           {copy.cta}
         </div>
       )}
+      <p className="mt-5 border-t border-[#1E2B3D] pt-3 text-xs text-slate-500">
+        {formatCharacterCount(characterCount)} caracteres • {estimateNarrationTime(characterCount)} de
+        narração
+      </p>
     </article>
   )
 }

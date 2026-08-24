@@ -3,7 +3,7 @@ import type { CopyRequest, CopyResponse } from '../../shared/copySchemas'
 export type { CopyRequest, CopyResponse }
 export type GeneratedCopy = CopyResponse['copies'][number]
 
-export type FieldErrors = Partial<Record<'productName' | 'offer' | 'audience', string>>
+export type FieldErrors = Partial<Record<'productName' | 'audience', string>>
 
 export interface HistoryEntry {
   id: string
