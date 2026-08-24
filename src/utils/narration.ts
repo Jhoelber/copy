@@ -31,8 +31,8 @@ export function estimateNarrationTime(
   const minutes = Math.floor(totalSeconds / 60)
   const seconds = totalSeconds % 60
 
-  if (minutes === 0) return `~${seconds}s`
-  if (seconds === 0) return `~${minutes}min`
+  if (minutes === 0) return `${seconds}s`
+  if (seconds === 0) return `${minutes}min`
   return `~${minutes}min${String(seconds).padStart(2, '0')}s`
 }
 
