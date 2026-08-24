@@ -1,37 +1,51 @@
 import { handleGenerateCopy } from '../server/generateCopy'
 
-interface FunctionRequest {
-  method?: string
-  headers: Record<string, string | string[] | undefined>
-  body?: unknown
+const responseHeaders = {
+  'Cache-Control': 'no-store',
+  'Content-Type': 'application/json; charset=utf-8',
 }
 
-interface FunctionResponse {
-  setHeader(name: string, value: string): void
-  status(code: number): FunctionResponse
-  json(body: unknown): unknown
+function jsonResponse(body: unknown, status: number, headers?: Record<string, string>) {
+  return new Response(JSON.stringify(body), {
+    status,
+    headers: { ...responseHeaders, ...headers },
+  })
 }
 
-export default async function handler(request: FunctionRequest, response: FunctionResponse) {
-  response.setHeader('Cache-Control', 'no-store')
+export default {
+  async fetch(request: Request) {
+    if (request.method !== 'POST') {
+      return jsonResponse(
+        { error: 'Método não permitido.', code: 'METHOD_NOT_ALLOWED' },
+        405,
+        { Allow: 'POST' },
+      )
+    }
 
-  if (request.method !== 'POST') {
-    response.setHeader('Allow', 'POST')
-    return response.status(405).json({ error: 'Método não permitido.', code: 'METHOD_NOT_ALLOWED' })
-  }
+    const contentType = request.headers.get('content-type') ?? ''
+    if (!contentType.toLowerCase().startsWith('application/json')) {
+      return jsonResponse(
+        { error: 'Envie o conteúdo como JSON.', code: 'UNSUPPORTED_MEDIA_TYPE' },
+        415,
+      )
+    }
 
-  const contentType = String(request.headers['content-type'] ?? '')
-  if (!contentType.toLowerCase().startsWith('application/json')) {
-    return response
-      .status(415)
-      .json({ error: 'Envie o conteúdo como JSON.', code: 'UNSUPPORTED_MEDIA_TYPE' })
-  }
+    const contentLength = Number(request.headers.get('content-length') ?? 0)
+    if (contentLength > 12_000) {
+      return jsonResponse(
+        { error: 'Requisição muito grande.', code: 'PAYLOAD_TOO_LARGE' },
+        413,
+      )
+    }
 
-  const contentLength = Number(request.headers['content-length'] ?? 0)
-  if (contentLength > 12_000) {
-    return response.status(413).json({ error: 'Requisição muito grande.', code: 'PAYLOAD_TOO_LARGE' })
-  }
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return jsonResponse({ error: 'Requisição inválida.', code: 'INVALID_JSON' }, 400)
+    }
 
-  const result = await handleGenerateCopy(request.body)
-  return response.status(result.status).json(result.body)
+    const result = await handleGenerateCopy(body)
+    return jsonResponse(result.body, result.status)
+  },
 }

@@ -1,4 +1,3 @@
-import { GoogleGenAI } from '@google/genai'
 import {
   copyRequestSchema,
   copyResponseSchema,
@@ -8,7 +7,7 @@ import { buildCopyPrompt, SYSTEM_INSTRUCTION } from './prompt'
 
 type ApiResult =
   | { status: 200; body: CopyResponse }
-  | { status: 400 | 500 | 503 | 504; body: { error: string; code: string } }
+  | { status: 400 | 429 | 500 | 502 | 503 | 504; body: { error: string; code: string } }
 
 const outputJsonSchema = {
   type: 'object',
@@ -66,6 +65,7 @@ export async function handleGenerateCopy(rawBody: unknown): Promise<ApiResult> {
   }
 
   try {
+    const { GoogleGenAI } = await import('@google/genai')
     const ai = new GoogleGenAI({ apiKey })
     const response = await withTimeout(
       ai.models.generateContent({
@@ -94,6 +94,35 @@ export async function handleGenerateCopy(rawBody: unknown): Promise<ApiResult> {
       return {
         status: 504,
         body: { error: 'A geração demorou mais que o esperado. Tente novamente.', code: 'AI_TIMEOUT' },
+      }
+    }
+
+    const upstreamStatus =
+      typeof error === 'object' && error !== null && 'status' in error
+        ? Number((error as { status?: unknown }).status)
+        : undefined
+    const upstreamCode =
+      typeof error === 'object' && error !== null && 'code' in error
+        ? String((error as { code?: unknown }).code)
+        : undefined
+
+    console.error('[generate-copy] Gemini request failed', {
+      name: error instanceof Error ? error.name : 'UnknownError',
+      status: Number.isFinite(upstreamStatus) ? upstreamStatus : undefined,
+      code: upstreamCode,
+    })
+
+    if (upstreamStatus === 401 || upstreamStatus === 403) {
+      return {
+        status: 502,
+        body: { error: 'A configuração do serviço de IA foi recusada.', code: 'AI_AUTH_FAILED' },
+      }
+    }
+
+    if (upstreamStatus === 429) {
+      return {
+        status: 429,
+        body: { error: 'O limite temporário da IA foi atingido. Tente novamente em instantes.', code: 'AI_RATE_LIMITED' },
       }
     }
 
