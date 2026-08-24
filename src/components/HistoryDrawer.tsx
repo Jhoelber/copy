@@ -1,6 +1,7 @@
 import { Clock3, FileText, X } from 'lucide-react'
 import { useEffect, useRef } from 'react'
 import type { HistoryEntry } from '../types/copy'
+import { formatNarrationDurationOption } from '../utils/narration'
 
 interface HistoryDrawerProps {
   open: boolean
@@ -116,6 +117,9 @@ export function HistoryDrawer({ open, history, onClose, onSelect }: HistoryDrawe
                         <p className="mt-1 text-xs text-slate-500">
                           {entry.request.copyType} · {entry.response.copies.length}{' '}
                           {entry.response.copies.length === 1 ? 'copy' : 'copies'}
+                        </p>
+                        <p className="mt-1 truncate text-[11px] text-slate-600">
+                          {formatNarrationDurationOption(entry.request.narrationDuration)}
                         </p>
                         <time dateTime={entry.createdAt} className="mt-2 block text-[11px] text-slate-600">
                           {dateFormatter.format(new Date(entry.createdAt))}

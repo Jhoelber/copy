@@ -1,13 +1,10 @@
 import { COPY_TYPE_CONFIG, type CopyType } from '../../shared/copyTypeConfig'
+import {
+  NARRATION_DURATION_CONFIG,
+  NARRATION_DURATIONS,
+  type NarrationDuration,
+} from '../../shared/narrationConfig'
 import type { GeneratedCopy } from '../types/copy'
-
-export const NARRATION_SPEEDS = {
-  slow: 750,
-  normal: 900,
-  fast: 1050,
-} as const
-
-export const NARRATION_CHARS_PER_MINUTE = NARRATION_SPEEDS.normal
 
 const characterFormatter = new Intl.NumberFormat('pt-BR')
 
@@ -21,34 +18,61 @@ export function countNarrationCharacters(copy: Pick<GeneratedCopy, 'headline' | 
   return getNarrationText(copy).length
 }
 
-export function estimateNarrationTime(
-  characterCount: number,
-  charactersPerMinute = NARRATION_CHARS_PER_MINUTE,
-) {
-  const safeCharacterCount = Math.max(0, characterCount)
-  const safeSpeed = charactersPerMinute > 0 ? charactersPerMinute : NARRATION_CHARS_PER_MINUTE
-  const totalSeconds = Math.round((safeCharacterCount / safeSpeed) * 60)
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
+export function estimateNarrationTime(characterCount: number) {
+  const safeCharacterCount = Math.max(0, Math.round(characterCount))
+  const firstRange = NARRATION_DURATION_CONFIG[NARRATION_DURATIONS[0]]
+  const lastRange = NARRATION_DURATION_CONFIG[NARRATION_DURATIONS[NARRATION_DURATIONS.length - 1]]
 
-  if (minutes === 0) return `${seconds}s`
-  if (seconds === 0) return `${minutes}min`
-  return `${minutes}min${String(seconds).padStart(2, '0')}s`
+  if (safeCharacterCount < firstRange.minimumCharacters) return 'menos de 1 min'
+  if (safeCharacterCount > lastRange.maximumCharacters) return 'mais de 60 min'
+
+  const closestRange = NARRATION_DURATIONS.map(
+    (duration) => NARRATION_DURATION_CONFIG[duration],
+  ).reduce((closest, range) => {
+    const distance =
+      safeCharacterCount < range.minimumCharacters
+        ? range.minimumCharacters - safeCharacterCount
+        : safeCharacterCount > range.maximumCharacters
+          ? safeCharacterCount - range.maximumCharacters
+          : 0
+    const closestDistance =
+      safeCharacterCount < closest.minimumCharacters
+        ? closest.minimumCharacters - safeCharacterCount
+        : safeCharacterCount > closest.maximumCharacters
+          ? safeCharacterCount - closest.maximumCharacters
+          : 0
+
+    return distance < closestDistance ? range : closest
+  }, firstRange)
+
+  return `~${closestRange.minutes} min`
 }
 
 export function formatCharacterCount(characterCount: number) {
   return characterFormatter.format(characterCount)
 }
 
-export function getCopyTypeEstimate(copyType: CopyType) {
+export function formatNarrationDurationOption(duration: NarrationDuration) {
+  const config = NARRATION_DURATION_CONFIG[duration]
+  const unit = config.minutes === 1 ? 'minuto' : 'minutos'
+  return `${config.minutes} ${unit} — ${formatCharacterCount(config.minimumCharacters)} a ${formatCharacterCount(config.maximumCharacters)} caracteres`
+}
+
+export function findClosestNarrationDuration(characterCount: number): NarrationDuration {
+  return NARRATION_DURATIONS.reduce((closest, duration) => {
+    const range = NARRATION_DURATION_CONFIG[duration]
+    const closestRange = NARRATION_DURATION_CONFIG[closest]
+    const distance = Math.abs((range.minimumCharacters + range.maximumCharacters) / 2 - characterCount)
+    const closestDistance = Math.abs(
+      (closestRange.minimumCharacters + closestRange.maximumCharacters) / 2 - characterCount,
+    )
+    return distance < closestDistance ? duration : closest
+  }, NARRATION_DURATIONS[0])
+}
+
+export function getDefaultNarrationDuration(copyType: CopyType): NarrationDuration {
   const config = COPY_TYPE_CONFIG[copyType]
-  if (config.targetCharacters) {
-    return `${formatCharacterCount(config.targetCharacters)} caracteres e ${estimateNarrationTime(config.targetCharacters)} de narração`
-  }
-
-  if ('minimumCharacters' in config && config.minimumCharacters) {
-    return `${formatCharacterCount(config.minimumCharacters)} caracteres e ${estimateNarrationTime(config.minimumCharacters)} de narração`
-  }
-
-  return 'Tamanho e duração variáveis'
+  const characterCount =
+    'minimumCharacters' in config ? config.minimumCharacters : config.targetCharacters
+  return characterCount ? findClosestNarrationDuration(characterCount) : '1'
 }

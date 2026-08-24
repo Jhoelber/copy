@@ -1,5 +1,6 @@
 import { RefreshCw } from 'lucide-react'
 import type { CopyRequest, CopyResponse } from '../types/copy'
+import { formatNarrationDurationOption } from '../utils/narration'
 import { CopyCard } from './CopyCard'
 
 interface CopyResultsProps {
@@ -21,6 +22,9 @@ export function CopyResults({ result, request, isLoading, error, onRegenerate }:
           </h2>
           <p className="mt-1 text-sm text-slate-500">
             {result.copies.length} {result.copies.length === 1 ? 'versão' : 'versões'} para {request.productName}
+          </p>
+          <p className="mt-1 text-xs text-slate-600">
+            Faixa solicitada: {formatNarrationDurationOption(request.narrationDuration)}
           </p>
         </div>
         <button

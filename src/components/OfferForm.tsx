@@ -1,7 +1,12 @@
 import { useState, type FormEvent } from 'react'
-import { COPY_TYPES, VARIATION_OPTIONS } from '../../shared/copySchemas'
+import { COPY_TYPES, NARRATION_DURATIONS, VARIATION_OPTIONS } from '../../shared/copySchemas'
+import {
+  MAX_GENERATED_CHARACTERS_PER_REQUEST,
+  NARRATION_DURATION_CONFIG,
+  type NarrationDuration,
+} from '../../shared/narrationConfig'
 import type { CopyRequest, FieldErrors } from '../types/copy'
-import { getCopyTypeEstimate } from '../utils/narration'
+import { formatNarrationDurationOption } from '../utils/narration'
 import { GenerateButton } from './GenerateButton'
 import { IntensitySlider } from './IntensitySlider'
 import { NarrationEstimate } from './NarrationEstimate'
@@ -12,6 +17,7 @@ const initialForm: CopyRequest = {
   audience: '',
   differentiators: '',
   copyType: 'Meta Ads',
+  narrationDuration: '2',
   variations: 5,
   intensity: 55,
 }
@@ -31,6 +37,13 @@ function validateForm(form: CopyRequest): FieldErrors {
   return errors
 }
 
+function getAllowedVariations(duration: NarrationDuration) {
+  const maximumCharacters = NARRATION_DURATION_CONFIG[duration].maximumCharacters
+  return VARIATION_OPTIONS.filter(
+    (variations) => variations * maximumCharacters <= MAX_GENERATED_CHARACTERS_PER_REQUEST,
+  )
+}
+
 export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
   const [form, setForm] = useState<CopyRequest>(initialForm)
   const [errors, setErrors] = useState<FieldErrors>({})
@@ -40,6 +53,31 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
     if (field === 'productName' || field === 'audience') {
       setErrors((current) => ({ ...current, [field]: undefined }))
     }
+  }
+
+  function updateCopyType(copyType: CopyRequest['copyType']) {
+    setForm((current) => {
+      const currentDuration = NARRATION_DURATION_CONFIG[current.narrationDuration]
+      const narrationDuration =
+        copyType === 'VSL' && currentDuration.maximumCharacters < 10_000
+          ? '10'
+          : current.narrationDuration
+      const allowedVariations = getAllowedVariations(narrationDuration)
+      const variations = allowedVariations.includes(current.variations)
+        ? current.variations
+        : allowedVariations[allowedVariations.length - 1]
+      return { ...current, copyType, narrationDuration, variations }
+    })
+  }
+
+  function updateNarrationDuration(narrationDuration: NarrationDuration) {
+    setForm((current) => {
+      const allowedVariations = getAllowedVariations(narrationDuration)
+      const variations = allowedVariations.includes(current.variations)
+        ? current.variations
+        : allowedVariations[allowedVariations.length - 1]
+      return { ...current, narrationDuration, variations }
+    })
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -165,7 +203,7 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
           />
         </div>
 
-        <div className="grid gap-5 sm:grid-cols-[minmax(0,1fr)_180px]">
+        <div className="grid gap-5 sm:grid-cols-[minmax(0,0.9fr)_minmax(0,1.25fr)_160px]">
           <div>
             <label htmlFor="copyType" className="text-sm font-medium text-slate-200">
               Tipo de copy
@@ -173,17 +211,39 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
             <select
               id="copyType"
               value={form.copyType}
-              onChange={(event) => updateField('copyType', event.target.value as CopyRequest['copyType'])}
+              onChange={(event) => updateCopyType(event.target.value as CopyRequest['copyType'])}
               disabled={isLoading}
               className={inputClass}
             >
               {COPY_TYPES.map((type) => (
                 <option key={type} value={type}>
-                  {type} — {getCopyTypeEstimate(type)}
+                  {type}
                 </option>
               ))}
             </select>
-            <NarrationEstimate copyType={form.copyType} />
+          </div>
+          <div>
+            <label htmlFor="narrationDuration" className="text-sm font-medium text-slate-200">
+              Duração e tamanho da copy
+            </label>
+            <select
+              id="narrationDuration"
+              value={form.narrationDuration}
+              onChange={(event) => updateNarrationDuration(event.target.value as NarrationDuration)}
+              disabled={isLoading}
+              className={inputClass}
+            >
+              {NARRATION_DURATIONS.filter(
+                (duration) =>
+                  form.copyType !== 'VSL' ||
+                  NARRATION_DURATION_CONFIG[duration].maximumCharacters >= 10_000,
+              ).map((duration) => (
+                <option key={duration} value={duration}>
+                  {formatNarrationDurationOption(duration)}
+                </option>
+              ))}
+            </select>
+            <NarrationEstimate duration={form.narrationDuration} />
           </div>
           <div>
             <label htmlFor="variations" className="text-sm font-medium text-slate-200">
@@ -198,7 +258,7 @@ export function OfferForm({ isLoading, error, onGenerate }: OfferFormProps) {
               disabled={isLoading}
               className={inputClass}
             >
-              {VARIATION_OPTIONS.map((amount) => (
+              {getAllowedVariations(form.narrationDuration).map((amount) => (
                 <option key={amount} value={amount}>
                   {amount} {amount === 1 ? 'copy' : 'copies'}
                 </option>

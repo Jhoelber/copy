@@ -1,18 +1,18 @@
 import { Info } from 'lucide-react'
 import { useState } from 'react'
-import type { CopyType } from '../../shared/copyTypeConfig'
-import { getCopyTypeEstimate } from '../utils/narration'
+import type { NarrationDuration } from '../../shared/narrationConfig'
+import { formatNarrationDurationOption } from '../utils/narration'
 
 interface NarrationEstimateProps {
-  copyType: CopyType
+  duration: NarrationDuration
 }
 
-export function NarrationEstimate({ copyType }: NarrationEstimateProps) {
+export function NarrationEstimate({ duration }: NarrationEstimateProps) {
   const [open, setOpen] = useState(false)
 
   return (
     <div className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-slate-500">
-      <span>{getCopyTypeEstimate(copyType)}</span>
+      <span>{formatNarrationDurationOption(duration)}</span>
       <span className="group relative mt-0.5 shrink-0">
         <button
           type="button"
@@ -34,8 +34,8 @@ export function NarrationEstimate({ copyType }: NarrationEstimateProps) {
               : 'invisible opacity-0 group-hover:visible group-hover:opacity-100'
           }`}
         >
-          Estimativa baseada em uma narração média de aproximadamente 900 caracteres por minuto. A
-          duração real pode variar conforme ritmo, pausas e interpretação.
+          Estimativa baseada em faixas calibradas de caracteres para narrações entre 1 e 60 minutos.
+          A duração real pode variar conforme ritmo, pausas e interpretação.
         </span>
       </span>
     </div>

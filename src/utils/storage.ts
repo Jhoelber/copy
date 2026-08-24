@@ -1,5 +1,10 @@
 import type { HistoryEntry } from '../types/copy'
 import { COPY_TYPES, type CopyType } from '../../shared/copyTypeConfig'
+import {
+  NARRATION_DURATIONS,
+  type NarrationDuration,
+} from '../../shared/narrationConfig'
+import { getDefaultNarrationDuration } from './narration'
 
 const STORAGE_KEY = 'copyforge.history.v1'
 const MAX_HISTORY_ITEMS = 10
@@ -11,7 +16,10 @@ export function readHistory(): HistoryEntry[] {
     const parsed: unknown = JSON.parse(raw)
     if (!Array.isArray(parsed)) return []
 
-    return parsed.filter(isHistoryEntry).slice(0, MAX_HISTORY_ITEMS)
+    return parsed
+      .map(normalizeHistoryEntry)
+      .filter((entry): entry is HistoryEntry => Boolean(entry))
+      .slice(0, MAX_HISTORY_ITEMS)
   } catch {
     return []
   }
@@ -31,16 +39,30 @@ export function saveHistory(entry: HistoryEntry): HistoryEntry[] {
   return next
 }
 
-function isHistoryEntry(value: unknown): value is HistoryEntry {
-  if (!value || typeof value !== 'object') return false
+function normalizeHistoryEntry(value: unknown): HistoryEntry | null {
+  if (!value || typeof value !== 'object') return null
   const entry = value as Partial<HistoryEntry>
-  return Boolean(
-    typeof entry.id === 'string' &&
-      typeof entry.createdAt === 'string' &&
-      entry.request &&
-      typeof entry.request.productName === 'string' &&
-      COPY_TYPES.includes(entry.request.copyType as CopyType) &&
-      entry.response &&
-      Array.isArray(entry.response.copies),
-  )
+  if (
+    typeof entry.id !== 'string' ||
+    typeof entry.createdAt !== 'string' ||
+    !entry.request ||
+    typeof entry.request.productName !== 'string' ||
+    !COPY_TYPES.includes(entry.request.copyType as CopyType) ||
+    !entry.response ||
+    !Array.isArray(entry.response.copies)
+  ) {
+    return null
+  }
+
+  const copyType = entry.request.copyType as CopyType
+  const storedDuration = entry.request.narrationDuration as NarrationDuration | undefined
+  const narrationDuration =
+    storedDuration && NARRATION_DURATIONS.includes(storedDuration)
+      ? storedDuration
+      : getDefaultNarrationDuration(copyType)
+
+  return {
+    ...entry,
+    request: { ...entry.request, narrationDuration },
+  } as HistoryEntry
 }
