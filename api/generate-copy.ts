@@ -1,4 +1,4 @@
-import { handleGenerateCopy } from '../server/generateCopy.ts'
+import { handleGenerateCopy } from '../server/generateCopy'
 
 interface FunctionRequest {
   method?: string

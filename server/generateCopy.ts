@@ -3,8 +3,8 @@ import {
   copyRequestSchema,
   copyResponseSchema,
   type CopyResponse,
-} from '../shared/copySchemas.ts'
-import { buildCopyPrompt, SYSTEM_INSTRUCTION } from './prompt.ts'
+} from '../shared/copySchemas'
+import { buildCopyPrompt, SYSTEM_INSTRUCTION } from './prompt'
 
 type ApiResult =
   | { status: 200; body: CopyResponse }

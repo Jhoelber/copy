@@ -1,7 +1,7 @@
 import { defineConfig, loadEnv, type Plugin } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
-import { handleGenerateCopy } from './server/generateCopy.ts'
+import { handleGenerateCopy } from './server/generateCopy'
 
 function localApiPlugin(): Plugin {
   return {

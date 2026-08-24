@@ -1,4 +1,4 @@
-import type { CopyRequest } from '../shared/copySchemas.ts'
+import type { CopyRequest } from '../shared/copySchemas'
 
 const TYPE_GUIDANCE: Record<CopyRequest['copyType'], string> = {
   Anúncio: 'Estruture como anúncio versátil: abertura forte, benefício central e CTA.',
